@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 4 — Полная автоматизация</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .flow {
+      margin: 1.5rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    .flow-step {
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      padding: 0.85rem 1rem;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      font-family: system-ui, sans-serif;
+      font-size: 0.88rem;
+    }
+    .flow-step:first-child { border-radius: 6px 6px 0 0; }
+    .flow-step:last-child { border-bottom: 1px solid var(--border); border-radius: 0 0 6px 6px; }
+    .flow-step .who {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--accent);
+      font-weight: 600;
+      min-width: 80px;
+      padding-top: 0.1rem;
+    }
+    .flow-step .what { color: var(--text); line-height: 1.5; }
+    .flow-step.highlight { background: var(--code-bg); }
+    .flow-arrow {
+      text-align: center;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0.1rem 0;
+      margin-left: 1.5rem;
+    }
+    .layer {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin: 1rem 0;
+      overflow: hidden;
+    }
+    .layer-header {
+      background: var(--code-bg);
+      padding: 0.5rem 1rem;
+      font-family: system-ui, sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+    .layer-body {
+      padding: 0.85rem 1rem;
+      font-family: system-ui, sans-serif;
+      font-size: 0.88rem;
+    }
+    .cmd {
+      background: #1a1a1a;
+      color: #e0e0e0;
+      border-radius: 5px;
+      padding: 0.75rem 1rem;
+      font-family: monospace;
+      font-size: 0.82rem;
+      margin: 0.75rem 0;
+      line-height: 1.6;
+    }
+    .cmd .comment { color: #666; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="lesson-num">Урок 4 · Claude Code & Agents</div>
+    <h1>Полная автоматизация</h1>
+    <p style="color:var(--muted);font-family:system-ui,sans-serif;font-size:0.9rem;margin-top:0.5rem">
+      ← <a href="0003-skills-and-hooks.html" style="color:var(--accent)">Урок 3: Скилы и хуки</a>
+    </p>
+  </header>
+
+  <p>
+    Сейчас: ты кидаешь файл в папку → вручную пишешь <code>/process-finance</code> → ждёшь.
+    Цель: ты кидаешь файл → всё остальное происходит само.
+  </p>
+
+  <p>
+    Для этого нужны два компонента которые работают независимо друг от друга.
+  </p>
+
+  <h2>Два слоя автоматизации</h2>
+
+  <div class="layer">
+    <div class="layer-header">Слой 1 — Снаружи Claude: файловый наблюдатель</div>
+    <div class="layer-body">
+      Отдельный процесс, который смотрит на папку. Не Claude — операционная система.
+      Когда в папке появляется новый файл, наблюдатель это замечает и что-то делает.
+    </div>
+  </div>
+
+  <div class="layer">
+    <div class="layer-header">Слой 2 — Внутри Claude: headless-режим</div>
+    <div class="layer-body">
+      Claude Code умеет работать без тебя — запускается из командной строки, выполняет задачу и закрывается.
+      Никакого чата, никакого ожидания ответа. Это называется headless (без головы — без интерфейса).
+    </div>
+  </div>
+
+  <div class="analogy">
+    <p>
+      <strong>Аналогия.</strong> Слой 1 — это датчик на двери склада: заметил посылку, подал сигнал.
+      Слой 2 — это курьер которого вызвали по сигналу: пришёл, сделал работу, ушёл.
+      Датчик не знает про курьера. Курьер не знает про датчик. Они связаны одним сигналом.
+    </p>
+  </div>
+
+  <h2>Полный поток</h2>
+
+  <div class="flow">
+    <div class="flow-step">
+      <span class="who">Ты</span>
+      <span class="what">Кладёшь счёт в папку <code>/inbox/</code></span>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step highlight">
+      <span class="who">Наблюдатель</span>
+      <span class="what">Замечает новый файл. Запускает Claude Code через командную строку.</span>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step highlight">
+      <span class="who">Claude Code</span>
+      <span class="what">Запускается в headless-режиме. Читает задачу, выполняет process-finance, закрывается.</span>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">
+      <span class="who">Хук Stop</span>
+      <span class="what">Проверяет папку <code>/processed/</code>. Находит свежий файл → показывает уведомление.</span>
+    </div>
+    <div class="flow-arrow">↓</div>
+    <div class="flow-step">
+      <span class="who">Ты</span>
+      <span class="what">Получаешь уведомление. Счёт обработан, лог записан.</span>
+    </div>
+  </div>
+
+  <h2>Как выглядит headless-запуск</h2>
+
+  <p>
+    Claude Code можно вызвать из терминала одной строкой. Наблюдатель делает именно это:
+  </p>
+
+  <div class="cmd">
+    <span class="comment"># Наблюдатель запускает это когда видит новый файл:</span><br>
+    claude --print "В папке /inbox/ появился новый счёт. Обработай его по process-finance."
+  </div>
+
+  <p>
+    <code>--print</code> — это флаг который говорит: «не открывай чат, просто выполни и выведи результат».
+    Claude читает CLAUDE.md, находит скил process-finance, следует инструкциям, закрывается.
+  </p>
+
+  <h2>Как выглядит наблюдатель</h2>
+
+  <p>
+    На Windows наблюдатель — это PowerShell-скрипт с <code>FileSystemWatcher</code>.
+    Ты запускаешь его один раз, он работает в фоне и ждёт событий.
+  </p>
+
+  <div class="cmd">
+    <span class="comment"># Упрощённая схема скрипта (не для запуска — для понимания):</span><br><br>
+    наблюдать папку C:\inbox\<br>
+    когда появляется новый файл:<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;подождать 2 секунды (файл должен полностью скопироваться)<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;запустить: claude --print "обработай новый счёт"
+  </div>
+
+  <div class="analogy">
+    <p>
+      <strong>Важно.</strong> Наблюдатель — это отдельная программа, не Claude.
+      Она написана один раз, запускается при старте компьютера и работает сама.
+      Claude об этом не знает — его просто вызывают как инструмент.
+    </p>
+  </div>
+
+  <h2>Что ты контролируешь</h2>
+
+  <p>У каждого слоя своя точка контроля:</p>
+
+  <div class="layer">
+    <div class="layer-header">Наблюдатель — папка и условие</div>
+    <div class="layer-body">
+      Какую папку смотреть. Какие файлы считать триггером (только PDF? любые?).
+      Сколько ждать перед запуском.
+    </div>
+  </div>
+
+  <div class="layer">
+    <div class="layer-header">Claude headless — задача и скил</div>
+    <div class="layer-body">
+      Что написано в промпте. Какой скил выполняется. Куда пишет результаты.
+    </div>
+  </div>
+
+  <div class="layer">
+    <div class="layer-header">Хук Stop — уведомление</div>
+    <div class="layer-body">
+      Проверяет что работа реально случилась. Показывает уведомление только тогда.
+    </div>
+  </div>
+
+  <h2>Проверь себя</h2>
+
+  <div class="quiz">
+    <p class="question">Ты кладёшь счёт в /inbox/. Что происходит первым?</p>
+    <label><input type="radio" name="q1" value="a"> Claude замечает файл и начинает обработку</label>
+    <label><input type="radio" name="q1" value="b"> Файловый наблюдатель замечает файл и вызывает Claude Code</label>
+    <label><input type="radio" name="q1" value="c"> Хук PostToolUse запускает наблюдатель</label>
+    <label><input type="radio" name="q1" value="d"> Windows отправляет файл в Claude автоматически</label>
+    <div id="feedback1"></div>
+  </div>
+
+  <div class="quiz">
+    <p class="question">Что означает флаг --print при запуске Claude Code?</p>
+    <label><input type="radio" name="q2" value="a"> Распечатать результат на принтере</label>
+    <label><input type="radio" name="q2" value="b"> Запустить без интерфейса чата, выполнить задачу и закрыться</label>
+    <label><input type="radio" name="q2" value="c"> Показать историю предыдущих сессий</label>
+    <label><input type="radio" name="q2" value="d"> Включить режим отладки</label>
+    <div id="feedback2"></div>
+  </div>
+
+  <div class="quiz">
+    <p class="question">Зачем в наблюдателе пауза в 2 секунды перед запуском Claude?</p>
+    <label><input type="radio" name="q3" value="a"> Claude нужно время чтобы проснуться</label>
+    <label><input type="radio" name="q3" value="b"> Чтобы уведомление успело появиться</label>
+    <label><input type="radio" name="q3" value="c"> Чтобы файл успел полностью скопироваться перед чтением</label>
+    <label><input type="radio" name="q3" value="d"> Это требование Windows</label>
+    <div id="feedback3"></div>
+  </div>
+
+  <footer>
+    <p>
+      Первоисточник: <a href="https://docs.anthropic.com/en/docs/claude-code/cli-reference" target="_blank">Anthropic — Claude Code CLI Reference</a>
+    </p>
+    <p style="margin-top:0.75rem">
+      Что-то непонятно? Спроси меня в Claude Code — разберём любой момент.
+    </p>
+    <p style="margin-top:0.75rem">
+      Следующий шаг: <em>Строим наблюдатель — настраиваем автоматизацию на реальной задаче</em>
+    </p>
+  </footer>
+
+</div>
+
+<script>
+  const correct = { q1: 'b', q2: 'b', q3: 'c' };
+  const explanations = {
+    q1: {
+      b: 'Верно. Наблюдатель — это отдельный процесс, не Claude. Он следит за папкой и вызывает Claude Code когда что-то появилось.',
+      other: 'Нет. Claude не следит за файловой системой сам. Это делает отдельный наблюдатель, который потом вызывает Claude.'
+    },
+    q2: {
+      b: 'Верно. --print запускает headless-режим: Claude выполняет задачу без интерактивного чата и закрывается.',
+      other: 'Нет. --print означает non-interactive режим: без чата, выполнить и выйти.'
+    },
+    q3: {
+      c: 'Верно. Когда файл копируется, он несколько мгновений неполный. Claude не должен читать его до того как копирование завершилось.',
+      other: 'Нет. Пауза нужна чтобы файл успел полностью скопироваться — иначе Claude прочитает неполный файл.'
+    }
+  };
+
+  ['q1','q2','q3'].forEach(name => {
+    document.querySelectorAll(`input[name=${name}]`).forEach(input => {
+      input.addEventListener('change', () => {
+        const val = input.value;
+        const num = name.slice(1);
+        const fb = document.getElementById('feedback' + num);
+        document.querySelectorAll(`input[name=${name}]`).forEach(i => {
+          i.closest('label').classList.remove('correct', 'wrong');
+        });
+        const selected = input.closest('label');
+        if (val === correct[name]) {
+          selected.classList.add('correct');
+          fb.textContent = '✓ ' + explanations[name][val];
+          fb.style.color = '#2e7d32';
+        } else {
+          selected.classList.add('wrong');
+          fb.textContent = '✗ ' + explanations[name]['other'];
+          fb.style.color = '#c62828';
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 2 — Инструменты агента</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .toolbox {
+      display: grid;
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+    .tool-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.9rem 1.1rem;
+      font-family: system-ui, sans-serif;
+    }
+    .tool-name {
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      margin-bottom: 0.25rem;
+    }
+    .tool-desc {
+      font-size: 0.9rem;
+      color: var(--text);
+      margin: 0;
+    }
+    .tool-example {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+    .permission-box {
+      background: #1a1a1a;
+      color: #e0e0e0;
+      border-radius: 6px;
+      padding: 1.1rem 1.25rem;
+      margin: 1.5rem 0;
+      font-family: monospace;
+      font-size: 0.85rem;
+      line-height: 1.7;
+    }
+    .permission-box .prompt-line { color: #aaa; }
+    .permission-box .tool-call { color: #f9a825; }
+    .permission-box .allow { color: #66bb6a; }
+    .permission-box .deny { color: #ef5350; }
+    .loop-steps {
+      counter-reset: step;
+      list-style: none;
+      margin: 1rem 0 1.5rem;
+      padding: 0;
+    }
+    .loop-steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 0.9rem;
+      align-items: flex-start;
+      margin-bottom: 0.7rem;
+      font-family: system-ui, sans-serif;
+      font-size: 0.92rem;
+    }
+    .loop-steps li::before {
+      content: counter(step);
+      background: var(--accent);
+      color: white;
+      width: 1.4rem;
+      height: 1.4rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="lesson-num">Урок 2 · Claude Code & Agents</div>
+    <h1>Инструменты агента</h1>
+    <p style="color:var(--muted);font-family:system-ui,sans-serif;font-size:0.9rem;margin-top:0.5rem">
+      ← <a href="0001-what-is-an-agent.html" style="color:var(--accent)">Урок 1: Что такое агент?</a>
+    </p>
+  </header>
+
+  <p>
+    В прошлый раз мы разобрались: агент — это Claude с инструментами и несколькими шагами.
+    Сегодня разберём <strong>что это за инструменты</strong> — и как ты остаёшься у руля.
+  </p>
+
+  <div class="analogy">
+    <p>
+      <strong>Аналогия.</strong> Сам по себе Claude — это мозг без рук.
+      Может думать, но ничего не сделает. Инструменты — это руки.
+      Каждый инструмент даёт агенту одну конкретную возможность: прочитать, написать, запустить, найти.
+    </p>
+  </div>
+
+  <h2>Как работает агент на практике</h2>
+
+  <p>Агент не делает всё за один шаг. Он идёт по циклу:</p>
+
+  <ol class="loop-steps">
+    <li>Получает задачу от тебя</li>
+    <li>Думает — какой инструмент нужен?</li>
+    <li>Вызывает инструмент — получает результат</li>
+    <li>Думает снова — что дальше?</li>
+    <li>Повторяет до тех пор, пока задача не сделана</li>
+  </ol>
+
+  <p>
+    Это и есть агентный цикл. Инструменты — это то, что происходит на шаге 3.
+  </p>
+
+  <h2>Инструменты в Claude Code</h2>
+
+  <div class="toolbox">
+    <div class="tool-card">
+      <div class="tool-name">Read — чтение</div>
+      <p class="tool-desc">Открывает любой файл и читает его содержимое.</p>
+      <p class="tool-example">Пример: агент читает CSV с транзакциями перед обработкой.</p>
+    </div>
+    <div class="tool-card">
+      <div class="tool-name">Write / Edit — запись</div>
+      <p class="tool-desc">Создаёт новый файл или изменяет существующий.</p>
+      <p class="tool-example">Пример: агент создаёт итоговый отчёт в Obsidian vault после анализа.</p>
+    </div>
+    <div class="tool-card">
+      <div class="tool-name">Bash / PowerShell — команды</div>
+      <p class="tool-desc">Запускает команды в терминале — переименовывает файлы, запускает скрипты, перемещает папки.</p>
+      <p class="tool-example">Пример: агент перемещает обработанный счёт в папку /processed/.</p>
+    </div>
+    <div class="tool-card">
+      <div class="tool-name">Grep / Glob — поиск</div>
+      <p class="tool-desc">Ищет файлы по имени или содержимому внутри проекта.</p>
+      <p class="tool-example">Пример: агент находит все файлы за март, чтобы сделать сводку.</p>
+    </div>
+    <div class="tool-card">
+      <div class="tool-name">WebFetch / WebSearch — интернет</div>
+      <p class="tool-desc">Загружает страницу по ссылке или делает поиск в сети.</p>
+      <p class="tool-example">Пример: агент claude-code-guide читал документацию из интернета в прошлый раз.</p>
+    </div>
+    <div class="tool-card">
+      <div class="tool-name">Agent — субагент</div>
+      <p class="tool-desc">Запускает другого Claude как отдельного агента с чистым контекстом.</p>
+      <p class="tool-example">Пример: главный агент поручает claude-code-guide найти документацию, пока сам занимается другим.</p>
+    </div>
+  </div>
+
+  <h2>Ты остаёшься у руля</h2>
+
+  <p>
+    Агент не может просто делать что хочет. Прежде чем использовать некоторые инструменты —
+    особенно те, которые что-то меняют — Claude Code <strong>спрашивает разрешения</strong>.
+  </p>
+
+  <p>Вот как это выглядит в терминале:</p>
+
+  <div class="permission-box">
+    <span class="prompt-line">Claude wants to run a command:</span><br>
+    <span class="tool-call">PowerShell: Move-Item invoice_march.pdf ./processed/</span><br><br>
+    <span class="allow">[y] Allow</span> &nbsp; <span class="deny">[n] Deny</span>
+  </div>
+
+  <p>
+    Ты видишь точно что агент собирается сделать — и можешь сказать нет.
+    Если скажешь нет — агент это учитывает и думает дальше (или останавливается).
+  </p>
+
+  <div class="analogy">
+    <p>
+      <strong>Аналогия.</strong> Ты дала коллеге задание. Но прежде чем он отправит письмо клиенту —
+      он показывает тебе черновик. Ты читаешь, правишь, говоришь «окей».
+      Агент работает так же: инициатива у него, решение у тебя.
+    </p>
+  </div>
+
+  <h2>Проверь себя</h2>
+
+  <div class="quiz" id="quiz1">
+    <p class="question">Ты просишь агента найти все счета за апрель в папке /invoices/ и создать сводку. Какой инструмент агент использует первым?</p>
+
+    <label><input type="radio" name="q1" value="a"> Write — чтобы сразу создать файл сводки</label>
+    <label><input type="radio" name="q1" value="b"> WebSearch — чтобы найти шаблон отчёта</label>
+    <label><input type="radio" name="q1" value="c"> Glob — чтобы найти все нужные файлы в папке</label>
+    <label><input type="radio" name="q1" value="d"> Bash — чтобы запустить скрипт</label>
+
+    <div id="feedback1"></div>
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <p class="question">Claude Code выводит запрос: «Allow PowerShell to run this command?» Что это означает?</p>
+
+    <label><input type="radio" name="q2" value="a"> Claude сломался и просит помощи</label>
+    <label><input type="radio" name="q2" value="b"> Агент хочет использовать инструмент и ждёт твоего разрешения</label>
+    <label><input type="radio" name="q2" value="c"> Нужно перезапустить Claude Code</label>
+    <label><input type="radio" name="q2" value="d"> Команда уже выполнена, это просто уведомление</label>
+
+    <div id="feedback2"></div>
+  </div>
+
+  <div class="quiz" id="quiz3">
+    <p class="question">Агент читает файл, думает, снова читает другой файл, думает, пишет результат. Как называется такая последовательность?</p>
+
+    <label><input type="radio" name="q3" value="a"> Цепочка промптов (prompt chain)</label>
+    <label><input type="radio" name="q3" value="b"> Агентный цикл (agent loop)</label>
+    <label><input type="radio" name="q3" value="c"> Пакетная обработка (batch processing)</label>
+    <label><input type="radio" name="q3" value="d"> Рекурсия (recursion)</label>
+
+    <div id="feedback3"></div>
+  </div>
+
+  <footer>
+    <p>
+      Первоисточник: <a href="https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview" target="_blank">Anthropic — Tool use (function calling)</a>
+    </p>
+    <p style="margin-top:0.75rem">
+      Что-то непонятно? Спроси меня прямо в Claude Code — я разберу любой момент из этого урока.
+    </p>
+    <p style="margin-top:0.75rem">
+      Следующий урок: <em>Скилы и хуки — как настроить поведение агента под себя</em>
+    </p>
+  </footer>
+
+</div>
+
+<script>
+  const correct = { q1: 'c', q2: 'b', q3: 'b' };
+  const explanations = {
+    q1: {
+      c: 'Верно. Сначала нужно найти файлы — это Glob. Потом Read прочитает каждый, и только потом Write создаст сводку.',
+      other: 'Нет. Сначала агент должен найти файлы — иначе что читать или в сводку включать? Первый шаг — поиск (Glob).'
+    },
+    q2: {
+      b: 'Верно. Агент хочет использовать инструмент Bash/PowerShell — это инструмент, который что-то меняет, поэтому Claude Code просит подтверждение.',
+      other: 'Не совсем. Команда ещё не выполнена. Это запрос разрешения — агент ждёт твоего «да» или «нет».'
+    },
+    q3: {
+      b: 'Верно. Именно это называется агентным циклом: думать → вызвать инструмент → увидеть результат → думать снова.',
+      other: 'Не совсем. Это агентный цикл: многошаговая работа через инструменты с промежуточным анализом результатов.'
+    }
+  };
+
+  ['q1','q2','q3'].forEach(name => {
+    document.querySelectorAll(`input[name=${name}]`).forEach(input => {
+      input.addEventListener('change', () => {
+        const val = input.value;
+        const num = name.slice(1);
+        const fb = document.getElementById('feedback' + num);
+        const labels = document.querySelectorAll(`input[name=${name}]`);
+
+        labels.forEach(i => {
+          i.closest('label').classList.remove('correct', 'wrong');
+        });
+
+        const selected = input.closest('label');
+        if (val === correct[name]) {
+          selected.classList.add('correct');
+          fb.textContent = '✓ ' + explanations[name][val];
+          fb.style.color = '#2e7d32';
+        } else {
+          selected.classList.add('wrong');
+          fb.textContent = '✗ ' + explanations[name]['other'];
+          fb.style.color = '#c62828';
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>

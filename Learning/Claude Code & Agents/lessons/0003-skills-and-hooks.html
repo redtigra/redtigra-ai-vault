@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 3 — Скилы и хуки</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <style>
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin: 1.5rem 0;
+    }
+    .concept-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.1rem;
+    }
+    .concept-card .label {
+      font-family: system-ui, sans-serif;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+    .concept-card p {
+      font-family: system-ui, sans-serif;
+      font-size: 0.88rem;
+      margin: 0;
+      color: var(--text);
+    }
+    .file-block {
+      background: var(--code-bg);
+      border-radius: 6px;
+      padding: 1rem 1.2rem;
+      margin: 1rem 0;
+      font-family: monospace;
+      font-size: 0.83rem;
+      line-height: 1.6;
+    }
+    .file-block .path {
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-bottom: 0.5rem;
+      font-family: system-ui, sans-serif;
+    }
+    .file-block .comment { color: var(--muted); }
+    .file-block .key { color: var(--accent); }
+    .trigger-tag {
+      display: inline-block;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1rem 0.5rem;
+      font-family: monospace;
+      font-size: 0.82rem;
+      color: var(--accent);
+    }
+    .event-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.75rem 0 1.5rem;
+    }
+    .event-list li {
+      display: flex;
+      gap: 0.8rem;
+      align-items: flex-start;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      font-family: system-ui, sans-serif;
+      font-size: 0.88rem;
+    }
+    .event-list li:last-child { border-bottom: none; }
+    .event-name {
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 130px;
+      font-family: monospace;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="lesson-num">Урок 3 · Claude Code & Agents</div>
+    <h1>Скилы и хуки</h1>
+    <p style="color:var(--muted);font-family:system-ui,sans-serif;font-size:0.9rem;margin-top:0.5rem">
+      ← <a href="0002-agent-tools.html" style="color:var(--accent)">Урок 2: Инструменты агента</a>
+    </p>
+  </header>
+
+  <p>
+    Мы разобрались с инструментами — тем, что агент <em>умеет делать</em>.
+    Теперь разберём как <strong>настроить</strong> поведение агента под себя, не написав ни строчки кода.
+    Для этого в Claude Code есть два механизма: <strong>скилы</strong> и <strong>хуки</strong>.
+  </p>
+
+  <div class="two-col">
+    <div class="concept-card">
+      <div class="label">Скил (Skill)</div>
+      <p>Ты запускаешь вручную командой <span class="trigger-tag">/название</span>.<br>Даёт Claude инструкции — как специализированный брифинг.</p>
+    </div>
+    <div class="concept-card">
+      <div class="label">Хук (Hook)</div>
+      <p>Запускается автоматически по событию.<br>Выполняет команду в терминале — без участия Claude.</p>
+    </div>
+  </div>
+
+  <div class="analogy">
+    <p>
+      <strong>Аналогия.</strong> Скил — это горячая клавиша: ты нажимаешь, запускается заготовленный сценарий.
+      Хук — это датчик движения: он сам срабатывает когда что-то происходит, без твоего участия.
+    </p>
+  </div>
+
+  <h2>Скилы: заготовленные инструкции</h2>
+
+  <p>
+    Скил — это обычный текстовый файл с инструкциями для Claude.
+    Когда ты пишешь <span class="trigger-tag">/teach</span>, Claude читает файл <code>teach.md</code> и следует тому, что там написано.
+    Ты уже используешь несколько скилов каждую сессию:
+  </p>
+
+  <div class="file-block">
+    <div class="path">Скилы в этом проекте:</div>
+    /teach          → открывает обучающую сессию<br>
+    /process-finance → обрабатывает финансовые документы<br>
+    /code-review    → проверяет изменения в коде<br>
+    /handoff        → готовит передачу задачи другому агенту
+  </div>
+
+  <p>
+    Файлы скилов лежат в папке <code>.claude/skills/</code> — либо глобально (для всех проектов),
+    либо в конкретном репозитории (только для него).
+    Внутри — обычный Markdown: что делать, в каком порядке, что проверить.
+  </p>
+
+  <div class="file-block">
+    <div class="path">Пример: фрагмент файла teach.md</div>
+    <span class="comment"># Skill: teach</span><br>
+    <br>
+    Читай MISSION.md и learning-records/,<br>
+    чтобы понять где мы остановились.<br>
+    Определи зону ближайшего развития.<br>
+    Создай урок в lessons/ и открой его.
+  </div>
+
+  <p>
+    Именно это произошло сегодня: ты написала <span class="trigger-tag">/teach</span>,
+    я прочитал скил, затем прочитал твои файлы, подготовил урок.
+    Скил дал мне контекст — я не угадывал что делать.
+  </p>
+
+  <h2>Хуки: автоматические реакции</h2>
+
+  <p>
+    Хук — это команда, которая запускается когда происходит определённое событие в Claude Code.
+    Хуки настраиваются в файле <code>settings.json</code> — это делает скил <span class="trigger-tag">/update-config</span>.
+  </p>
+
+  <p>Четыре момента когда может сработать хук:</p>
+
+  <ul class="event-list">
+    <li>
+      <span class="event-name">PreToolUse</span>
+      <span>Перед тем как агент использует инструмент. Можно проверить — или заблокировать.</span>
+    </li>
+    <li>
+      <span class="event-name">PostToolUse</span>
+      <span>После того как инструмент отработал. Например: автосохранение после каждого Edit.</span>
+    </li>
+    <li>
+      <span class="event-name">Notification</span>
+      <span>Когда Claude Code хочет тебя уведомить. Можно добавить звук или всплывашку.</span>
+    </li>
+    <li>
+      <span class="event-name">Stop</span>
+      <span>Когда Claude заканчивает работу. Например: git commit после завершения задачи.</span>
+    </li>
+  </ul>
+
+  <div class="analogy">
+    <p>
+      <strong>Важно.</strong> Хук выполняет команду <em>сам терминал</em> — не Claude.
+      Claude не знает что хук существует. Это значит: хуки надёжны и не зависят от того, что Claude решит сделать.
+    </p>
+  </div>
+
+  <h2>Когда что использовать</h2>
+
+  <div class="two-col">
+    <div class="concept-card">
+      <div class="label">Скил — когда...</div>
+      <p>Ты хочешь дать Claude специализированные инструкции для повторяющейся задачи. Запускаешь вручную, когда нужно.</p>
+    </div>
+    <div class="concept-card">
+      <div class="label">Хук — когда...</div>
+      <p>Ты хочешь чтобы что-то случалось <em>всегда</em> при определённом событии — автоматически, без напоминания.</p>
+    </div>
+  </div>
+
+  <h2>Проверь себя</h2>
+
+  <div class="quiz">
+    <p class="question">Ты пишешь /process-finance. Что происходит в этот момент?</p>
+    <label><input type="radio" name="q1" value="a"> Claude запускает встроенный финансовый модуль</label>
+    <label><input type="radio" name="q1" value="b"> Claude читает файл process-finance.md и следует его инструкциям</label>
+    <label><input type="radio" name="q1" value="c"> Хук автоматически запускает скрипт обработки</label>
+    <label><input type="radio" name="q1" value="d"> Claude ищет в интернете как обрабатывать финансы</label>
+    <div id="feedback1"></div>
+  </div>
+
+  <div class="quiz">
+    <p class="question">Ты хочешь чтобы после каждой завершённой задачи Claude Code воспроизводил звук. Что для этого нужно?</p>
+    <label><input type="radio" name="q2" value="a"> Написать скил /done-sound и вызывать его вручную</label>
+    <label><input type="radio" name="q2" value="b"> Попросить Claude запоминать играть звук</label>
+    <label><input type="radio" name="q2" value="c"> Настроить хук на событие Stop с командой воспроизведения</label>
+    <label><input type="radio" name="q2" value="d"> Включить уведомления в настройках Windows</label>
+    <div id="feedback2"></div>
+  </div>
+
+  <div class="quiz">
+    <p class="question">Чем хук принципиально отличается от скила?</p>
+    <label><input type="radio" name="q3" value="a"> Хук работает быстрее скила</label>
+    <label><input type="radio" name="q3" value="b"> Хук запускает команду автоматически по событию — без участия Claude и без твоей команды</label>
+    <label><input type="radio" name="q3" value="c"> Хук можно использовать только для финансовых задач</label>
+    <label><input type="radio" name="q3" value="d"> Хук — это скил с паролем</label>
+    <div id="feedback3"></div>
+  </div>
+
+  <footer>
+    <p>
+      Первоисточник: <a href="https://docs.anthropic.com/en/docs/claude-code/hooks" target="_blank">Anthropic — Claude Code: Hooks</a>
+    </p>
+    <p style="margin-top:0.75rem">
+      Что-то непонятно? Спроси меня в Claude Code — я разберу любой момент из этого урока.
+    </p>
+    <p style="margin-top:0.75rem">
+      Следующий урок: <em>Первая автоматизация — строим агента для реальной задачи</em>
+    </p>
+  </footer>
+
+</div>
+
+<script>
+  const correct = { q1: 'b', q2: 'c', q3: 'b' };
+  const explanations = {
+    q1: {
+      b: 'Верно. Скил — это файл с инструкциями. Claude читает его и действует по нему. Никакого встроенного модуля нет.',
+      other: 'Не совсем. Скил — это просто файл process-finance.md с инструкциями. Claude читает его и следует им.'
+    },
+    q2: {
+      c: 'Верно. Хук на событие Stop выполнит команду воспроизведения автоматически — каждый раз, без твоего участия.',
+      other: 'Нет. Скил нужно вызывать вручную — это не автоматика. Claude не запоминает такие вещи между сессиями. Нужен хук на событие Stop.'
+    },
+    q3: {
+      b: 'Верно. Хук срабатывает сам по событию и выполняет команду в терминале — Claude об этом даже не знает.',
+      other: 'Нет. Ключевое отличие: хук автоматический и работает на уровне терминала, а не на уровне Claude.'
+    }
+  };
+
+  ['q1','q2','q3'].forEach(name => {
+    document.querySelectorAll(`input[name=${name}]`).forEach(input => {
+      input.addEventListener('change', () => {
+        const val = input.value;
+        const num = name.slice(1);
+        const fb = document.getElementById('feedback' + num);
+
+        document.querySelectorAll(`input[name=${name}]`).forEach(i => {
+          i.closest('label').classList.remove('correct', 'wrong');
+        });
+
+        const selected = input.closest('label');
+        if (val === correct[name]) {
+          selected.classList.add('correct');
+          fb.textContent = '✓ ' + explanations[name][val];
+          fb.style.color = '#2e7d32';
+        } else {
+          selected.classList.add('wrong');
+          fb.textContent = '✗ ' + explanations[name]['other'];
+          fb.style.color = '#c62828';
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>
