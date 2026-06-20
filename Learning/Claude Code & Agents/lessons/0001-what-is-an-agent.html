@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Урок 1 — Что такое агент?</title>
+  <link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<div class="page">
+
+  <header>
+    <div class="lesson-num">Урок 1 · Claude Code & Agents</div>
+    <h1>Что такое агент?</h1>
+  </header>
+
+  <p>
+    Когда ты пишешь мне вопрос и я отвечаю — это обычный разговор.
+    Я получаю текст, думаю, возвращаю текст. Один шаг.
+  </p>
+
+  <p>
+    <strong>Агент — это Claude, которому дали инструменты и разрешили делать несколько шагов самостоятельно.</strong>
+  </p>
+
+  <p>
+    Вместо одного ответа агент может: прочитать файл → подумать → открыть другой файл → подумать ещё → написать результат. И так столько шагов, сколько нужно.
+  </p>
+
+  <div class="analogy">
+    <p>
+      <strong>Аналогия.</strong> Обычный запрос — это как спросить коллегу вопрос и получить ответ.
+      Агент — это как дать коллеге задание, ключи от офиса и сказать «разберись и доложи».
+      Он сам решает какие шкафы открыть, что прочитать, что сделать.
+    </p>
+  </div>
+
+  <h2>Что произошло сегодня</h2>
+
+  <p>
+    Когда ты спросила про PowerShell permissions, я не отвечал из головы.
+    Я запустил отдельного агента — <em>claude-code-guide</em> — с чистым контекстом и конкретной задачей: найти документацию. Он поискал, вернул результат, я передала тебе ответ.
+  </p>
+
+  <div class="diagram">
+Ты → я (главный агент)
+         │
+         └──► claude-code-guide (subagent)
+                    │  поиск документации
+                    └──► результат → обратно мне → тебе
+  </div>
+
+  <p>
+    То же самое с настройкой statusline — там работал агент <em>statusline-setup</em>.
+    Ты видела один ответ, но за ним был отдельный Claude с отдельной задачей.
+  </p>
+
+  <h2>Зачем это нужно</h2>
+
+  <p>Три причины запускать агента вместо просто спросить:</p>
+
+  <p><strong>1. Задача многошаговая.</strong> Агент может сам решать что делать дальше, не спрашивая каждый раз.</p>
+  <p><strong>2. Задача параллельная.</strong> Можно запустить несколько агентов одновременно — каждый делает своё.</p>
+  <p><strong>3. Контекст нужно защитить.</strong> Агент работает в отдельном контексте — не засоряет главный разговор промежуточными результатами.</p>
+
+  <h2>Проверь себя</h2>
+
+  <div class="quiz">
+    <p class="question">Сегодня я запустила агента claude-code-guide. Почему именно агента, а не просто ответила из памяти?</p>
+
+    <label><input type="radio" name="q1" value="a"> Потому что это быстрее</label>
+    <label><input type="radio" name="q1" value="b"> Потому что документация меняется и нельзя доверять памяти — нужен поиск</label>
+    <label><input type="radio" name="q1" value="c"> Потому что агенты всегда точнее</label>
+    <label><input type="radio" name="q1" value="d"> Потому что у меня не было нужной информации в контексте</label>
+
+    <div id="feedback"></div>
+  </div>
+
+  <footer>
+    <p>
+      Первоисточник: <a href="https://docs.anthropic.com/en/docs/build-with-claude/agents" target="_blank">Anthropic — Building with Claude: Agents</a>
+    </p>
+    <p style="margin-top:0.75rem">
+      Что-то непонятно? Спроси меня прямо в Claude Code — я твой учитель и отвечу на любой вопрос по этому уроку.
+    </p>
+    <p style="margin-top:0.75rem">
+      Следующий урок: <em>Инструменты агента — что он умеет делать</em>
+    </p>
+  </footer>
+
+</div>
+
+<script>
+  const answers = { q1: 'b' };
+  const explanations = {
+    q1: {
+      b: 'Верно. Документация Claude Code обновляется, и полагаться на то что я помню — ненадёжно. Агент с инструментом поиска даёт актуальный ответ.',
+      other: 'Не совсем. Главная причина — документация меняется, нужен реальный поиск, а не память.'
+    }
+  };
+
+  document.querySelectorAll('input[type=radio]').forEach(input => {
+    input.addEventListener('change', () => {
+      const name = input.name;
+      const val = input.value;
+      const fb = document.getElementById('feedback');
+      const labels = document.querySelectorAll(`label`);
+
+      labels.forEach(l => { l.classList.remove('correct', 'wrong'); });
+
+      const selected = input.closest('label');
+      if (val === answers[name]) {
+        selected.classList.add('correct');
+        fb.textContent = '✓ ' + explanations[name][val];
+        fb.style.color = '#2e7d32';
+      } else {
+        selected.classList.add('wrong');
+        fb.textContent = '✗ ' + explanations[name]['other'];
+        fb.style.color = '#c62828';
+      }
+    });
+  });
+</script>
+</body>
+</html>
