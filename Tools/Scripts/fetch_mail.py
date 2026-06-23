@@ -7,6 +7,7 @@ Usage:
     python fetch_mail.py --search "Canonical PO"    # full-text search
     python fetch_mail.py --from canonical           # filter by sender name/email/domain
     python fetch_mail.py --since 2026-06-01         # with --search or --from: limit date range
+    python fetch_mail.py --from brandon --thread    # full conversation (both directions)
     python fetch_mail.py --attachments              # download attachments to disk
     python fetch_mail.py --reauth                   # force re-login
 """
@@ -73,9 +74,10 @@ def get_token(reauth=False):
     return token["access_token"]
 
 
-def _paginate(access_token, params, max_results=200):
+def _paginate(access_token, params, max_results=200, folder=None):
     headers = {"Authorization": f"Bearer {access_token}"}
-    url = f"{GRAPH}/me/messages"
+    base = f"{GRAPH}/me/mailFolders/{folder}/messages" if folder else f"{GRAPH}/me/messages"
+    url = base
     messages = []
     while url and len(messages) < max_results:
         resp = requests.get(url, headers=headers, params=params)
@@ -99,7 +101,7 @@ def fetch_by_date(access_token, date_str):
     return _paginate(access_token, params)
 
 
-def fetch_by_search(access_token, query, since=None, until=None):
+def fetch_by_search(access_token, query, since=None, until=None, thread=False):
     # Graph $search uses KQL: supports "from:x", "subject:x", free text, AND/OR
     params = {
         "$search": f'"{query}"',
@@ -107,6 +109,21 @@ def fetch_by_search(access_token, query, since=None, until=None):
         "$top": 50,
     }
     messages = _paginate(access_token, params)
+
+    if thread:
+        # Also search sent items for outgoing side of the conversation
+        sent_params = {
+            "$search": f'"{query}"',
+            "$select": SELECT_FIELDS,
+            "$top": 50,
+        }
+        sent = _paginate(access_token, sent_params, folder="SentItems")
+        # Merge, deduplicate by id
+        seen = {m["id"] for m in messages}
+        for m in sent:
+            if m["id"] not in seen:
+                m["_sent"] = True
+                messages.append(m)
 
     # Client-side date filtering (can't combine $search + $filter without ConsistencyLevel)
     if since or until:
@@ -182,6 +199,8 @@ def format_messages(messages, label, att_map=None):
         preview = msg.get("bodyPreview", "").replace("\r\n", " ").replace("\n", " ").strip()
 
         flags = []
+        if msg.get("_sent"):
+            flags.append("→ отправлено")
         if not msg.get("isRead"):
             flags.append("UNREAD")
         if msg.get("importance") == "high":
@@ -212,6 +231,7 @@ def main():
                         help="Поиск по отправителю (имя, email или домен)")
     parser.add_argument("--since", metavar="YYYY-MM-DD", help="С этой даты (для --search / --from)")
     parser.add_argument("--until", metavar="YYYY-MM-DD", help="По эту дату (для --search / --from)")
+    parser.add_argument("--thread", action="store_true", help="Переписка в обе стороны (входящие + исходящие)")
     parser.add_argument("--attachments", action="store_true", help="Скачать аттачменты на диск")
     parser.add_argument("--reauth", action="store_true", help="Принудительная повторная авторизация")
     args = parser.parse_args()
@@ -220,7 +240,7 @@ def main():
 
     if args.search or args.sender:
         query = args.search or f"from:{args.sender}"
-        messages = fetch_by_search(access_token, query, since=args.since, until=args.until)
+        messages = fetch_by_search(access_token, query, since=args.since, until=args.until, thread=args.thread)
         label = query
         if args.since:
             label += f" (с {args.since})"
