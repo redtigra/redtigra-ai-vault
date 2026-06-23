@@ -32,14 +32,15 @@
 
 **Claude Code команда `/mail`** (`~/.claude/commands/mail.md`):
 ```
-/mail                                       # сегодня
-/mail вчера                                 # вчера
-/mail 2026-06-22                            # конкретная дата
-/mail --search "Canonical PO"               # полнотекстовый поиск (KQL)
-/mail --from canonical                      # по отправителю (имя / email / домен)
-/mail --from brandon --since 2026-06-01     # отправитель + диапазон дат
-/mail 2026-06-22 --attachments             # скачать аттачменты
-/mail --help                                # справка
+/mail                                           # сегодня
+/mail вчера                                     # вчера
+/mail 2026-06-22                                # конкретная дата
+/mail --search "Canonical PO"                   # полнотекстовый поиск (KQL)
+/mail --from canonical                          # по отправителю (имя / email / домен)
+/mail --from brandon --since 2026-06-01         # отправитель + диапазон дат
+/mail --from brandon --thread                   # переписка в обе стороны
+/mail 2026-06-22 --attachments                  # скачать аттачменты
+/mail --help                                    # справка
 ```
 Аттачменты сохраняются в `~/Downloads/mail-attachments/`.  
 Скрипт: `C:\Users\RHL49\repos\redtigra-ai-vault\Tools\Scripts\fetch_mail.py`
