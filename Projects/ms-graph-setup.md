@@ -57,5 +57,5 @@
 
 ## Ссылки
 - Скрипт: `C:\Users\RHL49\repos\redtigra-ai-vault\Tools\Scripts\fetch_mail.py`
-- Дневники: `C:\Users\RHL49\Documents\diaries\`
+- Daily notes (vault): `C:\Users\RHL49\repos\redtigra-ai-vault\Daily\YYYY-MM-DD.md`
 - Воркфлоу: Codex собирает сводки → планируется перенести в Claude Code Cowork
