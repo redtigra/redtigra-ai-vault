@@ -32,7 +32,7 @@ AUTHORITY = "https://login.microsoftonline.com/common"
 SCOPES = ["Mail.Read"]
 CACHE_PATH = os.path.expanduser("~/.ms_graph_token_cache.json")
 GRAPH = "https://graph.microsoft.com/v1.0"
-ATTACHMENTS_DIR = os.path.expanduser("~/Downloads/mail-attachments")
+ATTACHMENTS_DIR = r"C:\Users\RHL49\OneDrive - Remotehands 247 B.V\Documents\finance-docs-to-sort"
 
 SELECT_FIELDS = "id,subject,from,receivedDateTime,bodyPreview,isRead,importance,hasAttachments"
 
@@ -167,6 +167,8 @@ def fetch_attachments(access_token, message_id, save_dir):
     for att in resp.json().get("value", []):
         if att.get("@odata.type") != "#microsoft.graph.fileAttachment":
             continue
+        if att.get("isInline", False):
+            continue
         content = att.get("contentBytes", "")
         if not content:
             continue
@@ -256,11 +258,9 @@ def main():
 
     att_map = {}
     if args.attachments:
-        safe_label = label.replace(" ", "_").replace(":", "-").replace("/", "-")
-        save_dir = os.path.join(ATTACHMENTS_DIR, safe_label)
         for msg in messages:
             if msg.get("hasAttachments"):
-                saved = fetch_attachments(access_token, msg["id"], save_dir)
+                saved = fetch_attachments(access_token, msg["id"], ATTACHMENTS_DIR)
                 if saved:
                     att_map[msg["id"]] = saved
 
